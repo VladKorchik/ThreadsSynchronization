@@ -9,30 +9,37 @@ public class Seller {
         this.autoShop = autoShop;
     }
 
-    public synchronized void recieveCar() {
+    public void recieveCar() {
         try {
-            System.out.println("Солярисов нет, ждём поставки.");
-            autoShop.getCars().add(new Car());
             Thread.sleep(deliveryTime);
+            synchronized (this) {
+                System.out.println("Выполняется поставка...");
+                autoShop.getCars().add(new Car());
+                notify();
+            }
             System.out.println("С завода приехал новенький авто.");
-            notify();
-        }   catch (InterruptedException exception) {
+
+        } catch (InterruptedException exception) {
             exception.printStackTrace();
         }
     }
 
-    public synchronized Car sellCar(){
-        try {
-            System.out.println( Thread.currentThread().getName() + " зашёл в салон, хочет купить Солярис...");
-            while (autoShop.getCars().size() == 0) {
-                System.out.println("Не могу продать Солярис, ждём поставки...");
-                wait();
+    public Car sellCar() {
+        System.out.println(Thread.currentThread().getName() + " зашёл в салон, хочет купить Солярис...");
+        synchronized (this) {
+            try {
+                if (autoShop.getCars().isEmpty()) {
+                    System.out.println("Автомобилей пока нет в наличии. Ждём поставку.");
+                    wait();
+                }
+                //Thread.sleep(clientWaitingTime);
+                System.out.println("Поздравляем с покупкой, " + Thread.currentThread().getName() + " ! Хотите защиту радиатора " +
+                        "за 15 тысяч рублей и каско за 90 тысяч рублей?");
+            } catch (InterruptedException exception) {
+                exception.printStackTrace();
+
+                return autoShop.getCars().remove(0);
             }
-            Thread.sleep(clientWaitingTime);
-            System.out.println("Поздравляем с покупкой, " + Thread.currentThread().getName() +  " ! Хотите защиту радиатора " +
-                    "за 15 тысяч рублей и каско за 90 тысяч рублей?");
-        }   catch (InterruptedException exception) {
-            exception.printStackTrace();
         }
         return autoShop.getCars().remove(0);
     }
